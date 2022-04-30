@@ -1,74 +1,94 @@
 {
-	"name": "azion-edge-functions",
-	"displayName": "Edge Functions - Azion",
-	"icon": "images/icon.png",
-	"galleryBanner": {
-		"color": "#F3652B",
-		"theme": "dark"
-	},
-	"license": "SEE LICENSE IN LICENSE.MD",
-	"description": "Run serverless applications at the edge, closer to your users and devices.",
-	"publisher": "jotanarciso",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/jotanarciso/azion-edge-functions-vscode-extension"
-	},
-	"author": {
-		"name": "João Narciso",
-		"url": "https://jotanarciso.com"
-	},
-	"version": "0.2.0",
-	"engines": {
-		"vscode": "^1.66.0"
-	},
-	"categories": [
-		"Other",
-		"Programming Languages"
-	],
-	"keywords": [
-		"edge computing",
-		"serverless",
-		"azion",
-		"edge functions"
-	],
-	"activationEvents": [
-		"onCommand:azion-functions.init",
-		"onCommand:azion-functions.patch"
-	],
-	"main": "./src/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "azion-functions.init",
-				"title": "Azion Edge Functions: Sync"
-			},
-			{
-				"command": "azion-functions.patch",
-				"title": "Azion Edge Functions: Update Function"
-			}
-		]
-	},
-	"scripts": {
-		"lint": "eslint .",
-		"pretest": "yarn run lint",
-		"test": "node ./test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.2.0",
-		"@types/mocha": "^9.1.0",
-		"@types/node": "14.x",
-		"@types/vscode": "^1.66.0",
-		"@vscode/test-electron": "^2.1.3",
-		"eslint": "^8.11.0",
-		"glob": "^7.2.0",
-		"mocha": "^9.2.2",
-		"typescript": "^4.5.5"
-	},
-	"dependencies": {
-		"axios": "^0.26.1",
-		"dotenv": "^16.0.0",
-		"envfile": "^6.17.0",
-		"node-fetch": "2",
-		"platform-folders": "^0.6.0"
-	}
+  "name": "azion-edge-functions",
+  "displayName": "Edge Functions - Azion",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#F3652B",
+    "theme": "dark"
+  },
+  "license": "SEE LICENSE IN LICENSE.MD",
+  "description": "Run serverless applications at the edge, closer to your users and devices.",
+  "publisher": "jotanarciso",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jotanarciso/azion-edge-functions-vscode-extension"
+  },
+  "author": {
+    "name": "João Narciso",
+    "url": "https://jotanarciso.com"
+  },
+  "version": "0.2.0",
+  "engines": {
+    "vscode": "^1.66.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "edge computing",
+    "serverless",
+    "azion",
+    "edge functions"
+  ],
+  "activationEvents": [
+    "onCommand:azion-functions.init",
+    "onCommand:azion-functions.update-token",
+    "onCommand:azion-functions.patch",
+    "onCommand:azion-functions.create-fla",
+    "onCommand:azion-functions.build-fla",
+    "onCommand:azion-functions.publish-fla"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "azion-functions.init",
+        "title": "Azion Edge Functions: Sync"
+      },
+      {
+        "command": "azion-functions.update-token",
+        "title": "Azion Edge Functions: Update Token"
+      },
+      {
+        "command": "azion-functions.patch",
+        "title": "Azion Edge Functions: Update Function"
+      },
+      {
+        "command": "azion-functions.create-fla",
+        "title": "Azion Edge Functions: Create Flareact Function"
+      },
+      {
+        "command": "azion-functions.build-fla",
+        "title": "Azion Edge Functions: Build Flareact Function"
+      },
+      {
+        "command": "azion-functions.publish-fla",
+        "title": "Azion Edge Functions: Publish Flareact Function"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "yarn run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "14.x",
+    "@types/vscode": "^1.66.0",
+    "@vscode/test-electron": "^2.1.3",
+    "eslint": "^8.11.0",
+    "glob": "^7.2.0",
+    "mocha": "^9.2.2",
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "axios": "^0.26.1",
+    "dotenv": "^16.0.0",
+    "envfile": "^6.17.0",
+    "node-fetch": "2",
+    "platform-folders": "^0.6.0"
+  }
 }

@@ -1,4 +1,5 @@
 const {
+  workspace,
   window,
   commands,
   // eslint-disable-next-line no-unused-vars
@@ -18,12 +19,16 @@ const {
   createWorkspace,
   getFileExtension,
   getFunctionNameByPath,
+  getPathWithoutFile,
+  getFileContent,
   slashUnicode,
 } = require("./helper");
-const { get, patch } = require("./service");
+const { get, post, patch } = require("./service");
 const messages = require("./messages");
 
 const getPath = require("platform-folders").default;
+const util = require("util");
+const exec = util.promisify(require("child_process").exec);
 
 const USER_DOCUMENTS_PATH = getPath("documents");
 const AZION_FOLDER_NAME = "azion-edge-functions";
@@ -34,9 +39,30 @@ const AZION_EDGE_FUNCTIONS_PATH = `${USER_DOCUMENTS_PATH}/${AZION_FOLDER_NAME}`;
 async function activate(context) {
   context.subscriptions.push(commands.registerCommand("azion-functions.init", () => init(context)));
   context.subscriptions.push(
+    commands.registerCommand("azion-functions.update-token", () => updateToken(context))
+  );
+  context.subscriptions.push(
     commands.registerCommand(
       "azion-functions.patch",
       async () => await updateEdgeFunction(window.activeTextEditor?.document, context)
+    )
+  );
+  context.subscriptions.push(
+    commands.registerCommand(
+      "azion-functions.create-fla",
+      async () => await createFlareactFunction(context)
+    )
+  );
+  context.subscriptions.push(
+    commands.registerCommand(
+      "azion-functions.build-fla",
+      async () => await buildFlareactFunction(context)
+    )
+  );
+  context.subscriptions.push(
+    commands.registerCommand(
+      "azion-functions.publish-fla",
+      async () => await publishFlareactFunction(context)
     )
   );
 }
@@ -83,6 +109,14 @@ async function setToken(context) {
 /**
  * @param {ExtensionContext} context
  */
+async function updateToken(context) {
+  await context.secrets.delete("TOKEN");
+  await setToken(context);
+}
+
+/**
+ * @param {ExtensionContext} context
+ */
 async function getAllEdgeFunctions(context) {
   const aux = [];
   const TOKEN = await context.secrets.get("TOKEN");
@@ -109,7 +143,7 @@ async function getAllEdgeFunctions(context) {
     } catch (err) {
       context.secrets.delete("TOKEN");
       if (err.detail) {
-        throw `Azion API request error: ${err.detail}`;
+        throw `${messages.azionApiError} ${err.detail}`;
       } else {
         throw `${messages.somethingWrong} ${messages.checkToken}`;
       }
@@ -165,7 +199,7 @@ async function updateEdgeFunction(doc, context) {
         window.showInformationMessage(messages.updated(name));
       } catch (err) {
         console.error(err);
-        if (err.detail === "Invalid token") context.secrets.delete("TOKEN");
+        if (err.detail === "Invalid token") updateToken(context);
         window.showErrorMessage(`${messages.somethingWrong} ${messages.updatedError(name)}`);
       }
     }
@@ -186,6 +220,102 @@ async function createLocalFunction(foo) {
   createFolder(localFunctionPath);
   createFile("code", code, localFunctionPath, functionExtension);
   createFile("args", jsonArgsString, localFunctionPath, "json");
+}
+
+async function createFlareactFunction(context) {
+  const flaReactFunctionName = await window.showInputBox({
+    placeHolder: messages.insertFunctionName,
+  });
+
+  const flaReactFunctionPath = `${USER_DOCUMENTS_PATH}/${flaReactFunctionName}`;
+
+  const execCommand = async () => {
+    await createProgress(
+      messages.creatingFlareactFunction,
+      exec(
+        `npx flareact4azion init ${flaReactFunctionPath} git@github.com:aziontech/flareact4azion-template.git`
+      )
+    );
+    await createProgress(
+      messages.flareactInstallDependencies,
+      exec(`cd ${flaReactFunctionPath} && npm install`)
+    );
+  };
+
+  if (flaReactFunctionName) {
+    try {
+      await execCommand();
+      let uri = Uri.file(`${USER_DOCUMENTS_PATH}/${flaReactFunctionName}`);
+      await commands.executeCommand("vscode.openFolder", uri);
+      // console.log("stdout:", stdout);
+      // console.log("stderr:", stderr);
+    } catch (e) {
+      console.error(e); // should contain code (exit code) and signal (that caused the termination).
+    }
+  }
+}
+
+/**
+ * @param {ExtensionContext} context
+ */
+async function buildFlareactFunction(context) {
+  const execCommand = async (/** @type {string} */ path) => {
+    try {
+      await createProgress(
+        messages.buildFlereactFunction,
+        exec(`cd ${path} && d flareact4azion build`)
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const { path } = workspace.workspaceFolders[0].uri;
+  try {
+    await execCommand(path);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/**
+ * @param {ExtensionContext} context
+ */
+async function publishFlareactFunction(context) {
+  const TOKEN = await context.secrets.get("TOKEN");
+  const { path } = workspace.workspaceFolders[0].uri;
+  const functionName = getFunctionNameByPath(path);
+
+  const payload = {
+    name: functionName,
+    language: "javascript",
+    active: true,
+    code: null,
+    json_args: "",
+  };
+
+  const buildedFunctionPath = `${path}/dist/worker.js`;
+  const jsonArgsPath = `${path}/args.json`;
+
+  const functionBuilded = getFileContent(buildedFunctionPath);
+  const functionArgs = getFileContent(jsonArgsPath);
+
+  payload.code = functionBuilded;
+  payload.json_args = functionArgs;
+
+  try {
+    const publishFlareactFunction = await createProgress(
+      messages.flareactPublishingFunction,
+      await post(TOKEN, payload)
+    );
+    if (Array.isArray(publishFlareactFunction.results)) {
+      throw publishFlareactFunction.results[0];
+    } else {
+      window.showInformationMessage(messages.flareactPublishFunction(functionName));
+    }
+  } catch (err) {
+    window.showErrorMessage(`${messages.azionApiError} ${err}`);
+  }
 }
 
 module.exports = {

@@ -1,7 +1,10 @@
 // @ts-nocheck
 const fetch = require("node-fetch");
 
-const API = "https://api.azionapi.net/edge_functions";
+
+const API_STAGE = "https://stage-api.azion.net/edge_functions";
+const API_PROD = "https://api.azionapi.net/edge_functions";
+
 const REQ_HEADERS = {
   Accept: "application/json; version=3",
   "Content-Type": "application/json",
@@ -42,4 +45,18 @@ async function patch(TOKEN, functionId, payload) {
     .then((body) => body);
 }
 
-module.exports = { get, patch };
+async function post(TOKEN, payload) {
+  return fetch(API_PROD, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    redirect: "follow",
+    headers: {
+      Authorization: `Token ${TOKEN}`,
+      ...REQ_HEADERS,
+    },
+  })
+    .then((res) => res.json())
+    .then((body) => body);
+}
+
+module.exports = { get, post, patch };

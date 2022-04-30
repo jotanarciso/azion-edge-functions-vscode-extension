@@ -91,12 +91,25 @@ function getFileExtension(langName) {
   return langs[langName];
 }
 
+/**
+ * @param {String} path
+ */
 function getFunctionNameByPath(path) {
-  const withoutFile = path.slice(0, path.lastIndexOf("/"));
-  let pos = withoutFile.lastIndexOf("/");
-  let name = withoutFile.substring(pos + 1);
+  if (path.includes(".js")) {
+    path = getPathWithoutFile(path);
+  }
+  let pos = path.lastIndexOf("/");
+  let name = path.substring(pos + 1);
   name = name.split(".")[0];
   return name;
+}
+
+function getPathWithoutFile(path) {
+  return path.slice(0, path.lastIndexOf("/"));
+}
+
+function getFileContent(path) {
+  return fs.readFileSync(path, "utf8");
 }
 
 /**
@@ -115,5 +128,7 @@ module.exports = {
   createWorkspace,
   getFileExtension,
   getFunctionNameByPath,
+  getPathWithoutFile,
+  getFileContent,
   slashUnicode,
 };
