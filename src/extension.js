@@ -222,7 +222,10 @@ async function createLocalFunction(foo) {
   createFile("args", jsonArgsString, localFunctionPath, "json");
 }
 
+// Flareact
 async function createFlareactFunction(context) {
+  const TOKEN = await context.secrets.get("TOKEN");
+
   const flaReactFunctionName = await window.showInputBox({
     placeHolder: messages.insertFunctionName,
   });
@@ -245,12 +248,18 @@ async function createFlareactFunction(context) {
   if (flaReactFunctionName) {
     try {
       await execCommand();
-      let uri = Uri.file(`${USER_DOCUMENTS_PATH}/${flaReactFunctionName}`);
+      const uri = Uri.file(flaReactFunctionPath);
+
+      // automatically updating configs
+      let azionConfig = getFileContent(`${flaReactFunctionPath}/azion.json`);
+      azionConfig = JSON.parse(azionConfig);
+      azionConfig["azion"].token = TOKEN;
+      azionConfig["azion"].function_name = flaReactFunctionName;
+      createFile("azion", JSON.stringify(azionConfig), flaReactFunctionPath, "json");
+
       await commands.executeCommand("vscode.openFolder", uri);
-      // console.log("stdout:", stdout);
-      // console.log("stderr:", stderr);
-    } catch (e) {
-      console.error(e); // should contain code (exit code) and signal (that caused the termination).
+    } catch (err) {
+      console.error(err);
     }
   }
 }
@@ -263,7 +272,7 @@ async function buildFlareactFunction(context) {
     try {
       await createProgress(
         messages.buildFlereactFunction,
-        exec(`cd ${path} && d flareact4azion build`)
+        exec(`cd ${path} && flareact4azion build`)
       );
     } catch (err) {
       console.log(err);
@@ -282,39 +291,17 @@ async function buildFlareactFunction(context) {
  * @param {ExtensionContext} context
  */
 async function publishFlareactFunction(context) {
-  const TOKEN = await context.secrets.get("TOKEN");
   const { path } = workspace.workspaceFolders[0].uri;
   const functionName = getFunctionNameByPath(path);
 
-  const payload = {
-    name: functionName,
-    language: "javascript",
-    active: true,
-    code: null,
-    json_args: "",
-  };
-
-  const buildedFunctionPath = `${path}/dist/worker.js`;
-  const jsonArgsPath = `${path}/args.json`;
-
-  const functionBuilded = getFileContent(buildedFunctionPath);
-  const functionArgs = getFileContent(jsonArgsPath);
-
-  payload.code = functionBuilded;
-  payload.json_args = functionArgs;
-
   try {
-    const publishFlareactFunction = await createProgress(
+    await createProgress(
       messages.flareactPublishingFunction,
-      await post(TOKEN, payload)
+      exec(`cd ${path} && npx flareact4azion publish`)
     );
-    if (Array.isArray(publishFlareactFunction.results)) {
-      throw publishFlareactFunction.results[0];
-    } else {
-      window.showInformationMessage(messages.flareactPublishFunction(functionName));
-    }
+    window.showInformationMessage(messages.flareactPublishFunction(functionName));
   } catch (err) {
-    window.showErrorMessage(`${messages.azionApiError} ${err}`);
+    window.showErrorMessage(messages.somethingWrong);
   }
 }
 

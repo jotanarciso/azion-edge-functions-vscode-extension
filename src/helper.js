@@ -91,6 +91,7 @@ function getFileExtension(langName) {
   return langs[langName];
 }
 
+
 /**
  * @param {String} path
  */
